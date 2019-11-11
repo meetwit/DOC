@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+    <title>Test</title>
+    <script src="bridge_data_003/lofty.js"></script>
+    <script src="bridge_data_003/jquery-latest.js"></script>
+    <script src="bridge_data_003/util.js"></script>
+    <script src="bridge_data_003/cross.js"></script>
+</head>
+<body>
+
+<script>
+    define([
+        'jquery',
+        'pkg/@alife/refly-mbox/3.1.4/lib/cross',
+        'pkg/@alife/refly-mbox/3.1.4/lib/util',
+        'lofty/util/cookie/1.0/cookie'
+    ], function (JQuery, Cross, Util, Cookie) {
+
+        var uri = Util.parseURL(window.location.href);
+        var name = uri.params.target;
+        var messenger = new Cross(name, 'mbox');
+
+        messenger.listen(function (msg) {
+
+            var crsfToken = Cookie.get('__mbox_csrf_token');
+            var msg = JSON.parse(msg);
+            var id = msg.id;
+            var url = msg.url;
+            var data = msg.data || {};
+            var options = JQuery.extend({
+                type: 'get',
+                dataType: 'json',
+            }, msg.options || {});
+
+            if (options.crsfToken) {
+                data['__mbox_csrf_token'] = data.crsfToken || crsfToken;
+            }
+
+            JQuery.extend(options, {
+                data: data,
+                success: function (result) {
+                    messenger.send(JSON.stringify({
+                        id: id,
+                        data: result
+                    }));
+                }
+            });
+
+            JQuery.ajax(url, options);
+        });
+
+        messenger.addTarget(window.parent, name);
+    });
+
+</script>
+
+</body></html>
